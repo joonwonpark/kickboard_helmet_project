@@ -15,11 +15,9 @@ from dotenv import load_dotenv
 import os
 
 import sys
-sys.path.append('/root/kickboard_helmet_project/yolor/')
+sys.path.append('/root/kickboard_helmet_project/SERVER/yolor')
 from pathlib import Path
 import random
-import time
-import cv2
 import torch
 from models.experimental import attempt_load
 from utils.torch_utils import select_device, time_synchronized
@@ -35,7 +33,7 @@ load_dotenv()
 app = Flask(__name__)
 
 bucket_name = os.getenv('bucket_name')
-model = attempt_load('/root/kickboard_helmet_project/yolor/best.pt', map_location=select_device(''))
+model = attempt_load('/root/kickboard_helmet_project/SERVER/yolor/best.pt', map_location=select_device(''))
 print('모델 로드 완료')
 conn = pymysql.connect(
     host = os.getenv("host"),
@@ -67,23 +65,23 @@ def image(bucket = s3, bucket_name = bucket_name, face_cascade = face_cascade, m
         save_time = time.strftime('%y%m%d%H%M%S')
         num =  request.form['num']
         rand_num = random.randrange(10000)
-        print(rand_num)
+        
     # 받은 문자열을 jpg 이미지로 저장
     imgdata = base64.b64decode(num)
     user_ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
     filename = f"{user_ip}_{int(save_time)}.jpg"
 
-    with open("/root/kickboard_helmet_project/static/" + filename, 'wb') as f:
+    with open("/root/kickboard_helmet_project/SERVER/static/" + filename, 'wb') as f:
         f.write(imgdata)
 
     # 탑승 인원 파악
     count = count_human_face(filename, face_cascade)
 
     # 헬멧 탐지
-    img_dir = '/root/kickboard_helmet_project/static/' + filename
+    img_dir = '/root/kickboard_helmet_project/SERVER/static/' + filename
     print(img_dir)
     detect_label = []
-    exec(open('/root/kickboard_helmet_project/yolor/detect.py').read())
+    exec(open('/root/kickboard_helmet_project/SERVER/yolor/detect.py').read())
     print('detect_label', detect_label)
     # MySQL에 metadata저장
     # cursor = conn.cursor() 
