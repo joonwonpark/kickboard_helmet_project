@@ -146,7 +146,7 @@ def detect(opt, model, detect_label, save_img=False):
 if __name__ == '__main__':
     # print(img_dir)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default='/root/final_project/yolor/best.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default='/root/kickboard_helmet_project/yolor/best.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default=img_dir, help='source')  # file/folder, 0 for webcam
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.5, help='object confidence threshold')
