@@ -218,6 +218,5 @@ cython_debug/
 
 ### Custom ###
 *.pt
-*.yaml
 
 # End of https://www.toptal.com/developers/gitignore/api/python,images,text
