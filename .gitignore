@@ -217,4 +217,7 @@ cython_debug/
 *.wpd
 *.wps
 
+### Custom ###
+*.pt
+
 # End of https://www.toptal.com/developers/gitignore/api/python,images,text
