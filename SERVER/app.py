@@ -8,7 +8,8 @@ import base64
 import time
 import cv2
 from PIL import Image
-from opencv import count_human_face, save_face_mosaic
+# from opencv import count_human_face, save_face_mosaic
+from RetinaFace import count_human_face, save_face_mosaic
 from werkzeug.exceptions import HTTPException
 import pymysql
 from dotenv import load_dotenv
@@ -16,6 +17,10 @@ import os
 
 import sys
 sys.path.append('/root/kickboard_helmet_project/SERVER/yolor')
+sys.path.append('/root/kickboard_helmet_project/SERVER/train_model/RetinaFace-tf2')
+
+from src.retinafacetf2.retinaface import RetinaFace
+
 from pathlib import Path
 import random
 import torch
@@ -33,6 +38,7 @@ load_dotenv()
 app = Flask(__name__)
 
 bucket_name = os.getenv('bucket_name')
+
 model = attempt_load('/root/kickboard_helmet_project/SERVER/yolor/best.pt', map_location=select_device(''))
 print('모델 로드 완료')
 conn = pymysql.connect(
@@ -45,6 +51,7 @@ conn = pymysql.connect(
 print('MySQL 연결')
 # S3 호출
 s3 = boto3.client('s3')
+detector = RetinaFace(False, 0.4)
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 print('S3 연결')
 
@@ -54,7 +61,7 @@ def hello():
   
 
 @app.route('/image', methods=['GET', 'POST'])
-def image(bucket = s3, bucket_name = bucket_name, face_cascade = face_cascade, model=model):
+def image(bucket = s3, bucket_name = bucket_name, face_cascade = face_cascade, detector=detector, model=model):
     # num값 GET or POST 방식으로 받기
     if request.method == 'GET':
         print('GET으로 url이 왔어요!')
@@ -75,7 +82,11 @@ def image(bucket = s3, bucket_name = bucket_name, face_cascade = face_cascade, m
         f.write(imgdata)
 
     # 탑승 인원 파악
-    count = count_human_face(filename, face_cascade)
+    # opencv version
+    # count = count_human_face(filename, face_cascade)
+
+    # retinaface version
+    count = count_human_face(filename, detector)
 
     # 헬멧 탐지
     img_dir = '/root/kickboard_helmet_project/SERVER/static/' + filename
@@ -97,7 +108,8 @@ def image(bucket = s3, bucket_name = bucket_name, face_cascade = face_cascade, m
 
     else:
         # S3에 얼굴 모자이크 처리 후 저장
-        save_face_mosaic(filename, face_cascade, bucket, bucket_name)
+        # save_face_mosaic(filename, face_cascade, bucket, bucket_name)
+        save_face_mosaic(filename, detector, bucket, bucket_name)
 
         return jsonify({"code" : 200,
                 "description": f"전달된 사진의 인원은 {count}명입니다. 캡처된 사진들은 s3에 모자이크 처리하여 저장되었습니다."
