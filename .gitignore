@@ -219,5 +219,10 @@ cython_debug/
 ### Custom ###
 *.pt
 *.npy
+ *.pyc
+env/
+*_mask*
+.vscode
+
 
 # End of https://www.toptal.com/developers/gitignore/api/python,images,text
