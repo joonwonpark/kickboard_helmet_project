@@ -108,8 +108,8 @@ def image(bucket = s3, bucket_name = bucket_name, face_cascade = face_cascade, d
 
     else:
         # S3에 얼굴 모자이크 처리 후 저장
-        # save_face_mosaic(filename, face_cascade, bucket, bucket_name)
-        save_face_mosaic(filename, detector, bucket, bucket_name)
+        # save_face_mosaic(filename, face_cascade, bucket, bucket_name) #opencv
+        save_face_mosaic(filename, detector, bucket, bucket_name) # retinaface
 
         return jsonify({"code" : 200,
                 "description": f"전달된 사진의 인원은 {count}명입니다. 캡처된 사진들은 s3에 모자이크 처리하여 저장되었습니다."
