@@ -238,7 +238,6 @@ class Camera2BasicFragment : Fragment(), View.OnClickListener,
             }
         }
 
-
         private fun capturePicture(result: CaptureResult) {
             println("capturePicture")
             val afState = result.get(CaptureResult.CONTROL_AF_STATE)
@@ -769,7 +768,7 @@ class Camera2BasicFragment : Fragment(), View.OnClickListener,
         return Base64.encodeToString(bytes, Base64.DEFAULT)
     }
 
-    private fun postContent(encodedImg: String) {
+    fun postContent(encodedImg : String) {
         println("통신")
         requestQueue =  Volley.newRequestQueue(context) //OPEN API 에 접속해서 정보를 가져올 객체
         val url = "http://132.226.7.137:80/image"
