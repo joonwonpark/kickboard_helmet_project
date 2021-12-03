@@ -1,4 +1,4 @@
-# 안전한 Personal Mobility 문화정착을 위한 인공지능서비스
+# 안전한 Personal Mobility 문화정착을 위한 AI 서비스
 
 
 
