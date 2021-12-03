@@ -1,4 +1,4 @@
-# 안전한 Personal Mobility 문화 정착을 위한 인공지능 서비스
+# 안전한 Personal Mobility 문화정착을 위한 인공지능서비스
 
 
 
@@ -50,5 +50,4 @@
 ## 5. 기대효과
 
 ![image](expect.png)
-
 
