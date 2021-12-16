@@ -7,6 +7,7 @@ import boto3
 import base64
 import time
 import cv2
+import math
 from PIL import Image
 # from opencv import count_human_face, save_face_mosaic
 from RetinaFace import count_human_face, save_face_mosaic
@@ -39,8 +40,8 @@ app = Flask(__name__)
 
 bucket_name = os.getenv('bucket_name')
 
-model = attempt_load('/root/kickboard_helmet_project/SERVER/yolor/best.pt', map_location=select_device(''))
-print('모델 로드 완료')
+# model = attempt_load('/root/kickboard_helmet_project/SERVER/yolor/best.pt', map_location=select_device(''))
+# print('모델 로드 완료')
 conn = pymysql.connect(
     host = os.getenv("host"),
     port = int(os.getenv("port")),
@@ -52,8 +53,8 @@ print('MySQL 연결')
 # S3 호출
 
 s3 = boto3.client('s3')
-detector = RetinaFace(False, 0.4)
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+# detector = RetinaFace(False, 0.4)
+# face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 print('S3 연결')
 
 @app.route("/")
@@ -61,60 +62,60 @@ def hello():
     return "안녕하세요 !!"
   
 
-@app.route('/image', methods=['GET', 'POST'])
-def image(bucket = s3, bucket_name = bucket_name, face_cascade = face_cascade, detector=detector, model=model):
-    # num값 GET or POST 방식으로 받기
-    if request.method == 'GET':
-        print('GET으로 url이 왔어요!')
-        save_time = time.strftime('%y%m%d%H%M%S')
-        num = request.args["num"]
-    else:
-        print('POST로 url이 왔어요!')
-        save_time = time.strftime('%y%m%d%H%M%S')
-        num =  request.form['num']
-        rand_num = random.randrange(10000)
+# @app.route('/image', methods=['GET', 'POST'])
+# def image(bucket = s3, bucket_name = bucket_name, face_cascade = face_cascade, detector=detector, model=model):
+#     # num값 GET or POST 방식으로 받기
+#     if request.method == 'GET':
+#         print('GET으로 url이 왔어요!')
+#         save_time = time.strftime('%y%m%d%H%M%S')
+#         num = request.args["num"]
+#     else:
+#         print('POST로 url이 왔어요!')
+#         save_time = time.strftime('%y%m%d%H%M%S')
+#         num =  request.form['num']
+#         rand_num = random.randrange(10000)
         
-    # 받은 문자열을 jpg 이미지로 저장
-    imgdata = base64.b64decode(num)
-    user_ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
-    filename = f"{user_ip}_{int(save_time)}.jpg"
+#     # 받은 문자열을 jpg 이미지로 저장
+#     imgdata = base64.b64decode(num)
+#     user_ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+#     filename = f"{user_ip}_{int(save_time)}.jpg"
 
-    with open("/root/kickboard_helmet_project/SERVER/static/" + filename, 'wb') as f:
-        f.write(imgdata)
+#     with open("/root/kickboard_helmet_project/SERVER/static/" + filename, 'wb') as f:
+#         f.write(imgdata)
 
-    # 탑승 인원 파악
-    # opencv version
-    # count = count_human_face(filename, face_cascade)
+#     # 탑승 인원 파악
+#     # opencv version
+#     # count = count_human_face(filename, face_cascade)
 
-    # retinaface version
-    count = count_human_face(filename, detector)
+#     # retinaface version
+#     count = count_human_face(filename, detector)
 
-    # 헬멧 탐지
-    img_dir = '/root/kickboard_helmet_project/SERVER/static/' + filename
-    print(img_dir)
-    detect_label = []
-    exec(open('/root/kickboard_helmet_project/SERVER/yolor/detect.py').read())
-    print('detect_label', detect_label)
-    #MySQL에 metadata저장
-    cursor = conn.cursor() 
-    cursor.execute("INSERT INTO flask2.Helmet_user (num, datetime) VALUES(%s, %s)",(rand_num,20210202))
-    result = cursor.fetchall()
-    conn.commit()
-    conn.close()
+#     # 헬멧 탐지
+#     img_dir = '/root/kickboard_helmet_project/SERVER/static/' + filename
+#     print(img_dir)
+#     detect_label = []
+#     exec(open('/root/kickboard_helmet_project/SERVER/yolor/detect.py').read())
+#     print('detect_label', detect_label)
+#     #MySQL에 metadata저장
+#     cursor = conn.cursor() 
+#     cursor.execute("INSERT INTO flask2.Helmet_user (num, datetime) VALUES(%s, %s)",(rand_num,20210202))
+#     result = cursor.fetchall()
+#     conn.commit()
+#     conn.close()
 
-    if count == 0:
-        return jsonify({"code" : 200,
-                "description": '얼굴이 보이지 않아요. 카메라 각도를 조절해주세요!'
-                })
+#     if count == 0:
+#         return jsonify({"code" : 200,
+#                 "description": '얼굴이 보이지 않아요. 카메라 각도를 조절해주세요!'
+#                 })
 
-    else:
-        # S3에 얼굴 모자이크 처리 후 저장
-        # save_face_mosaic(filename, face_cascade, bucket, bucket_name) #opencv
-        save_face_mosaic(filename, detector, bucket, bucket_name) # retinaface
+#     else:
+#         # S3에 얼굴 모자이크 처리 후 저장
+#         # save_face_mosaic(filename, face_cascade, bucket, bucket_name) #opencv
+#         save_face_mosaic(filename, detector, bucket, bucket_name) # retinaface
 
-        return jsonify({"code" : 200,
-                "description": f"전달된 사진의 인원은 {count}명입니다. 캡처된 사진들은 s3에 모자이크 처리하여 저장되었습니다."
-                }) 
+#         return jsonify({"code" : 200,
+#                 "description": f"전달된 사진의 인원은 {count}명입니다. 캡처된 사진들은 s3에 모자이크 처리하여 저장되었습니다."
+#                 }) 
 
     
 @app.errorhandler(Exception)
@@ -149,7 +150,7 @@ def register():
     sql = 'INSERT INTO flask2.Helmet_user (userid, save_time, detect, latitude, longitude, img_save_path ) VALUES(%s, %s,%s, %s,%s, %s)'
     cursor.execute(sql, (userid, save_time, detect, latitude, longitude, img_save_path))
     conn.commit()
-    conn.close()
+    # conn.close()
     return "hi"
 
 
@@ -164,8 +165,29 @@ def check():
     cursor.execute(sql, userid)
     result = cursor.fetchall()
     conn.commit()
-    conn.close
-    return jsonify(result)
+    conn.close()
+
+    distance = 0
+    no_cnt = 0
+    for i in result:
+        if i['detect'] == 0:
+            no_cnt += 1
+        if distance == 0:
+            distance += 0.001
+            before_lati, before_longi = i['latitude'], i['longitude']
+            continue
+        distance += math.sqrt((before_lati - i['latitude'])**2 + (before_longi - i['longitude'])**2)
+        before_lati, before_longi = i['latitude'], i['longitude']
+
+    print(distance)
+    if (no_cnt / len(result)) < 0.2:
+        print(f'{(no_cnt / len(result))}비율로 헬멧 착용안함, 안전 운행을 위해 헬멧을 착용해주세요')
+        return jsonify({"result" : 0,
+                        'distance' : distance})
+    else:
+        print((no_cnt / len(result)))
+        return jsonify({'result' : 1,
+                        'distance' : distance})
 
 # @app.route('/his3')
 # def dynamo_db(bucket = s3):
