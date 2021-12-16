@@ -50,6 +50,7 @@ conn = pymysql.connect(
 )
 print('MySQL 연결')
 # S3 호출
+
 s3 = boto3.client('s3')
 detector = RetinaFace(False, 0.4)
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -94,12 +95,12 @@ def image(bucket = s3, bucket_name = bucket_name, face_cascade = face_cascade, d
     detect_label = []
     exec(open('/root/kickboard_helmet_project/SERVER/yolor/detect.py').read())
     print('detect_label', detect_label)
-    # MySQL에 metadata저장
-    # cursor = conn.cursor() 
-    # cursor.execute("INSERT INTO flask.team8 (num, datetime) VALUES(%s, %s)",(rand_num,20210202))
-    # result = cursor.fetchall()
-    # conn.commit()
-    # conn.close()
+    #MySQL에 metadata저장
+    cursor = conn.cursor() 
+    cursor.execute("INSERT INTO flask2.Helmet_user (num, datetime) VALUES(%s, %s)",(rand_num,20210202))
+    result = cursor.fetchall()
+    conn.commit()
+    conn.close()
 
     if count == 0:
         return jsonify({"code" : 200,
@@ -136,30 +137,35 @@ def handle_exception(e):
 # 회원 가입
 @app.route('/register', methods=['POST'])
 def register():
-    id = request.form['id']
-    pwd = request.form['pwd']
-    name = request.form['name']
-    phone = request.form['phone']
+    userid = request.form['userid']
+    save_time = time.strftime('%Y-%m-%d %H:%M:%S')
+    print(save_time)
+    detect = request.form['detect']
+    latitude = request.form['latitude']
+    longitude = request.form['longitude']
+    img_save_path = request.form['img_save_path']
+    cursor = conn.cursor() 
+    print('2')
+    sql = 'INSERT INTO flask2.Helmet_user (userid, save_time, detect, latitude, longitude, img_save_path ) VALUES(%s, %s,%s, %s,%s, %s)'
+    cursor.execute(sql, (userid, save_time, detect, latitude, longitude, img_save_path))
+    conn.commit()
+    conn.close()
+    return "hi"
 
-    if not (id and pwd and name and phone):
-        return "모두 입력해주세요"
-    else:
-        sql = "SELECT * FROM member where id = %s"
-        select_cursor = conn.cursor()
-        select_cursor.execute(sql, (id))
-        result = select_cursor.fetchall()
-        select_cursor.close()
 
-        if result:
-            return "사용중인 아이디"
-        else:
-            insert_cursor = conn.cursor()
-            sql = "INSERT INTO member (id, pwd, name, phone) VALUES (%s, %s, %s, %s)" 
-            insert_cursor.execute(sql, (id, pwd, name, phone))
-            conn.commit()
-            insert_cursor.close()
+@app.route('/checkdb', methods=['POST'])
+def check():
+    userid = request.form['userid']
+    print(userid)
+    sql = "select * from flask2.Helmet_user where userid = %s"
+    # cursor = conn.cursor() 
     
-            return "회원가입 성공"
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    cursor.execute(sql, userid)
+    result = cursor.fetchall()
+    conn.commit()
+    conn.close
+    return jsonify(result)
 
 # @app.route('/his3')
 # def dynamo_db(bucket = s3):
