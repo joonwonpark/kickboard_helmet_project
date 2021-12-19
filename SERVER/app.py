@@ -9,8 +9,8 @@ import time
 import cv2
 import math
 from PIL import Image
-# from opencv import count_human_face, save_face_mosaic
-from RetinaFace import count_human_face, save_face_mosaic
+from opencv import count_human_face_cv, save_face_mosaic_cv
+from RetinaFace import count_human_face_retina, save_face_mosaic_retina
 from werkzeug.exceptions import HTTPException
 import pymysql
 from dotenv import load_dotenv
@@ -40,8 +40,8 @@ app = Flask(__name__)
 
 bucket_name = os.getenv('bucket_name')
 
-# model = attempt_load('/root/kickboard_helmet_project/SERVER/yolor/best.pt', map_location=select_device(''))
-# print('모델 로드 완료')
+model = attempt_load('/root/kickboard_helmet_project/SERVER/yolor/best.pt', map_location=select_device(''))
+print('모델 로드 완료')
 conn = pymysql.connect(
     host = os.getenv("host"),
     port = int(os.getenv("port")),
@@ -53,9 +53,10 @@ print('MySQL 연결')
 # S3 호출
 
 s3 = boto3.client('s3')
-# detector = RetinaFace(False, 0.4)
-# face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 print('S3 연결')
+detector = RetinaFace(False, 0.4)
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+print('얼굴 감지 모델 연결')
 
 @app.route("/")
 def hello():
@@ -134,24 +135,76 @@ def handle_exception(e):
         return jsonify(response)
     else:
         return "틀림"
-        
-# 회원 가입
+
 @app.route('/register', methods=['POST'])
-def register():
+def register(bucket = s3, bucket_name = bucket_name, detector=detector):
     userid = request.form['userid']
     save_time = time.strftime('%Y-%m-%d %H:%M:%S')
     print(save_time)
     detect = request.form['detect']
     latitude = request.form['latitude']
     longitude = request.form['longitude']
-    img_save_path = request.form['img_save_path']
+
+    if int(detect) == 0:
+        image = request.form['image']
+        filename = f'{userid}_{save_time}.jpg'
+        imgdata = base64.b64decode(image)
+        img_save_path = "/root/kickboard_helmet_project/SERVER/static/" + filename
+        with open(img_save_path, 'wb') as f:
+            f.write(imgdata)
+
+        save_face_mosaic_retina(filename, detector, bucket, bucket_name)
+        response = '얼굴 모자이크 후 DB에 정보 저장'
+    else:
+        img_save_path = ''
+        response = 'DB에 정보 저장'
+
+    save_face_mosaic_retina(filename, detector, bucket, bucket_name)
+
     cursor = conn.cursor() 
-    print('2')
     sql = 'INSERT INTO flask2.Helmet_user (userid, save_time, detect, latitude, longitude, img_save_path ) VALUES(%s, %s,%s, %s,%s, %s)'
     cursor.execute(sql, (userid, save_time, detect, latitude, longitude, img_save_path))
     conn.commit()
     # conn.close()
-    return "hi"
+    return response
+
+
+# @app.route('/register', methods=['POST'])
+# def register(bucket = s3, bucket_name = bucket_name, face_cascade = face_cascade, detector=detector, model=model):
+#     userid = request.form['userid']
+#     save_time = time.strftime('%Y-%m-%d %H:%M:%S')
+#     print(save_time)
+#     detect = request.form['detect']
+#     latitude = request.form['latitude']
+#     longitude = request.form['longitude']
+
+#     if int(detect) == 0:
+#         image = request.form['image']
+#         filename = f'{userid}_{save_time}.jpg'
+#         imgdata = base64.b64decode(image)
+#         img_save_path = "/root/kickboard_helmet_project/SERVER/static/" + filename
+#         with open(img_save_path, 'wb') as f:
+#             f.write(imgdata)
+#         detect_label = []
+#         exec(open('/root/kickboard_helmet_project/SERVER/yolor/detect.py').read())
+#         print(detect_label)
+#         if ('Helmet' in detect_label) | ('Bicycle helmet' in detect_label):
+#             response = '서버에서 재 확인 결과 헬멧 감지 후 DB에 정보 저장'
+#         else:
+#             response = '서버에서 재 확인 결과 헬멧 감지 안됨 DB에 정보 저장'
+#     else:
+#         img_save_path = ''
+#         response = 'DB에 정보 저장'
+#     print(filename)
+#     save_face_mosaic_retina(filename, detector, bucket, bucket_name)
+#     # save_face_mosaic_cv(filename, face_cascade, bucket, bucket_name)
+        
+#     cursor = conn.cursor() 
+#     sql = 'INSERT INTO flask2.Helmet_user (userid, save_time, detect, latitude, longitude, img_save_path ) VALUES(%s, %s,%s, %s,%s, %s)'
+#     cursor.execute(sql, (userid, save_time, detect, latitude, longitude, img_save_path))
+#     conn.commit()
+#     # conn.close()
+#     return response
 
 
 @app.route('/checkdb', methods=['POST'])
@@ -163,30 +216,29 @@ def check():
     
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     cursor.execute(sql, userid)
-    result = cursor.fetchall()
+    user_infos = cursor.fetchall()
     conn.commit()
-    conn.close()
+    # conn.close()
 
     distance = 0
     no_cnt = 0
-    for i in result:
-        if i['detect'] == 0:
+    for info in user_infos:
+        if int(info['detect']) == 0:
             no_cnt += 1
-        if distance == 0:
-            distance += 0.001
-            before_lati, before_longi = i['latitude'], i['longitude']
-            continue
-        distance += math.sqrt((before_lati - i['latitude'])**2 + (before_longi - i['longitude'])**2)
-        before_lati, before_longi = i['latitude'], i['longitude']
+        try:
+            distance += math.sqrt((before_lati - float(info['latitude']))**2 + (before_longi - float(info['longitude']))**2)
+            before_lati, before_longi = float(info['latitude']), float(info['longitude'])
+        except:
+            before_lati, before_longi = float(info['latitude']), float(info['longitude'])
 
     print(distance)
-    if (no_cnt / len(result)) < 0.2:
-        print(f'{(no_cnt / len(result))}비율로 헬멧 착용안함, 안전 운행을 위해 헬멧을 착용해주세요')
-        return jsonify({"result" : 0,
+    if (no_cnt / len(user_infos)) < 0.2:
+        print(f'{(no_cnt / len(user_infos))}비율로 헬멧 착용함, 안전 운행을 위해 헬멧을 착용해주세요')
+        return jsonify({"result" : 1,
                         'distance' : distance})
     else:
-        print((no_cnt / len(result)))
-        return jsonify({'result' : 1,
+        print((no_cnt / len(user_infos)))
+        return jsonify({'result' : 0,
                         'distance' : distance})
 
 # @app.route('/his3')
