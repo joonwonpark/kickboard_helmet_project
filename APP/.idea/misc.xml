@@ -3,12 +3,10 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
-        <entry key="..\:/Users/user/AndroidStudioProjects/kotlinApp2/Application/src/main/res/layout-land/fragment_camera2_basic.xml" value="0.10978835978835978" />
-        <entry key="..\:/Users/user/AndroidStudioProjects/kotlinApp2/Application/src/main/res/layout/activity_camera.xml" value="0.1296875" />
-        <entry key="..\:/Users/user/AndroidStudioProjects/kotlinApp2/Application/src/main/res/layout/fragment_camera2_basic.xml" value="0.25364583333333335" />
-        <entry key="..\:/Users/user/AndroidStudioProjects/kotlinApp4/Application/src/main/res/layout/activity_camera.xml" value="0.12604166666666666" />
-        <entry key="..\:/Users/user/AndroidStudioProjects/kotlinApp4/Application/src/main/res/layout/fragment_camera2_basic.xml" value="0.264" />
-        <entry key="..\:/kotlinApp4/Application/src/main/res/layout/activity_camera.xml" value="0.12092391304347826" />
+        <entry key="..\:/Users/user/AndroidStudioProjects/login_detection_gps_comm/app/src/main/res/layout/activity_main.xml" value="0.25364583333333335" />
+        <entry key="..\:/Users/user/Documents/GitHub/bycle/helmet/object_detection2/android/app/src/main/res/layout/tfe_od_activity_camera.xml" value="0.1296875" />
+        <entry key="..\:/Users/user/Documents/GitHub/bycle/helmet/object_detection2/android/app/src/main/res/layout/tfe_od_camera_connection_fragment_tracking.xml" value="0.13541666666666666" />
+        <entry key="..\:/Users/user/Documents/GitHub/bycle/helmet/object_detection2/android/app/src/main/res/layout/tfe_od_layout_bottom_sheet.xml" value="0.264" />
       </map>
     </option>
   </component>
